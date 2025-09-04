@@ -12,10 +12,29 @@ struct WeatherResponse: Codable {
     let list: [Forecast]
 }
 
+struct RawWeatherResponse: Codable {
+    let forecasts: [RawForecast]
+}
+
+struct RawForecast: Codable {
+    let date: String
+    let temperature: Double
+    let description: String
+}
+
 struct Forecast: Codable {
     let dt_txt: String
     let main: Main
     let weather: [Weather]
+    
+}
+
+extension Forecast {
+    init(from raw: RawForecast) {
+        self.dt_txt = raw.date
+        self.main = Main(temp: raw.temperature)
+        self.weather = [Weather(description: raw.description)]
+    }
 }
 
 struct Main: Codable {
@@ -25,6 +44,7 @@ struct Main: Codable {
 struct Weather: Codable {
     let description: String
 }
+
 
 // MARK: - ContentView
 struct ContentView: View {
@@ -77,19 +97,21 @@ struct ContentView: View {
 
 // MARK: - API Call
 func fetchWeather(for city: String, completion: @escaping (Result<WeatherResponse, Error>) -> Void) {
-    let apiKey = "84f64074eb0b9937e9c46643694b0c0d"
     let mobileApiKey = "c29tZWhvd2NpcmNsZXNob3dub2J0YWluc3Bpcml0ZGF3bmFyb3VuZHRoZXlzaG91bGQ"
     let urlString = "https://weather-api-1031436540785.us-east1.run.app/api/weather?city=\(city)"
     // You can also add state and country by appending "&state=\(state)&country=\(country)" to the URL
-    // TODO: Add mobileApiKey variable to the request header for the API call as `X-API-Key`
-    // let urlString = "https://api.openweathermap.org/data/2.5/forecast?q=\(city)&appid=\(apiKey)&units=metric"
+    
 
     guard let url = URL(string: urlString) else {
         completion(.failure(NSError(domain: "Invalid URL", code: 0)))
         return
     }
+    
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue(mobileApiKey, forHTTPHeaderField: "X-API-Key")
 
-    URLSession.shared.dataTask(with: url) { data, response, error in
+    URLSession.shared.dataTask(with: request) { data, response, error in
         if let error = error {
             completion(.failure(error))
             return
@@ -99,11 +121,14 @@ func fetchWeather(for city: String, completion: @escaping (Result<WeatherRespons
             completion(.failure(NSError(domain: "No data", code: 0)))
             return
         }
+        print(String(data: data, encoding: .utf8) ?? "Invalid JSON")
 
         do {
-            let decoded = try JSONDecoder().decode(WeatherResponse.self, from: data)
+            let raw = try JSONDecoder().decode(RawWeatherResponse.self, from: data)
+            let adaptedForecasts = raw.forecasts.map { Forecast(from: $0) }
+            let wrapped = WeatherResponse(list: adaptedForecasts)
             DispatchQueue.main.async {
-                completion(.success(decoded))
+                completion(.success(wrapped))
             }
         } catch {
             completion(.failure(error))
