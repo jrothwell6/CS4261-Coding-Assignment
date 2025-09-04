@@ -83,7 +83,7 @@ struct ContentView: View {
                     VStack(alignment: .leading) {
                         Text(forecast.dt_txt)
                             .font(.headline)
-                        Text("\(forecast.main.temp, specifier: "%.1f")°C")
+                        Text("\(forecast.main.temp, specifier: "%.1f")°F")
                         Text(forecast.weather.first?.description.capitalized ?? "")
                             .foregroundColor(.gray)
                     }
