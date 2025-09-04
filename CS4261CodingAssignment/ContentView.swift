@@ -77,8 +77,12 @@ struct ContentView: View {
 
 // MARK: - API Call
 func fetchWeather(for city: String, completion: @escaping (Result<WeatherResponse, Error>) -> Void) {
-    let apiKey = "84f64074eb0b9937e9c46643694b0c0d" 
-    let urlString = "https://api.openweathermap.org/data/2.5/forecast?q=\(city)&appid=\(apiKey)&units=metric"
+    let apiKey = "84f64074eb0b9937e9c46643694b0c0d"
+    let mobileApiKey = "c29tZWhvd2NpcmNsZXNob3dub2J0YWluc3Bpcml0ZGF3bmFyb3VuZHRoZXlzaG91bGQ"
+    let urlString = "https://weather-api-1031436540785.us-east1.run.app/api/weather?city=\(city)"
+    // You can also add state and country by appending "&state=\(state)&country=\(country)" to the URL
+    // TODO: Add mobileApiKey variable to the request header for the API call as `X-API-Key`
+    // let urlString = "https://api.openweathermap.org/data/2.5/forecast?q=\(city)&appid=\(apiKey)&units=metric"
 
     guard let url = URL(string: urlString) else {
         completion(.failure(NSError(domain: "Invalid URL", code: 0)))
